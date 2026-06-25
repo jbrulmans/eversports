@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import membershipPeriodsData from '../../data/membership-periods.json';
 import membershipsData from '../../data/memberships.json';
-import type { Membership, MembershipPeriod } from '../types';
+import type { Membership, MembershipPeriod, MembershipWithPeriods } from '../types';
 import type { IMembershipRepository } from './membership.interface';
 
 export class InMemoryMembershipRepository implements IMembershipRepository {
@@ -46,6 +46,24 @@ export class InMemoryMembershipRepository implements IMembershipRepository {
       this.periods.push(period);
       return period;
     });
+  }
+
+  findAllWithPeriods(): MembershipWithPeriods[] {
+    return this.memberships.map((membership) => ({
+      membership,
+      membershipPeriods: this.periods.filter((p) => p.membership === membership.id),
+    }));
+  }
+
+  saveMembershipWithPeriods(data: {
+    membership: Omit<Membership, 'id' | 'uuid'>;
+    periods: Omit<MembershipPeriod, 'id' | 'uuid'>[];
+  }): { membership: Membership; membershipPeriods: MembershipPeriod[] } {
+    const membership = this.saveMembership(data.membership);
+    const membershipPeriods = this.savePeriods(
+      data.periods.map((p) => ({ ...p, membership: membership.id })),
+    );
+    return { membership, membershipPeriods };
   }
 
   private nextMembershipId(): number {
