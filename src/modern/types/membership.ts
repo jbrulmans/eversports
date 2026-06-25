@@ -1,6 +1,6 @@
 export type BillingInterval = 'monthly' | 'yearly' | 'weekly';
 export type MembershipState = 'active' | 'pending' | 'expired';
-export type MembershipPeriodState = 'planned' | 'issued';
+export type MembershipPeriodState = 'planned' | 'active' | 'issued';
 export type PaymentMethod = 'cash' | 'credit card';
 
 export interface Membership {
