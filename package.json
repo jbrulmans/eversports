@@ -8,6 +8,7 @@
     "build": "tsc",
     "serve": "node dist/index.js",
     "test": "TZ=UTC jest",
+    "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --write .",
     "prepare": "husky"

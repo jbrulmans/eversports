@@ -1,0 +1,12 @@
+name: 'Setup Node'
+description: 'Setup Node from .nvmrc, restore npm cache, install dependencies'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+        cache: 'npm'
+    - run: npm ci
+      shell: bash
