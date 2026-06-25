@@ -1,4 +1,4 @@
-# Eversports Fullstack Interview — Membership Refactor
+# Eversports Fullstack Interview
 
 A modernized implementation of the membership management API, refactored from a legacy JavaScript codebase to a clean, layered TypeScript architecture.
 
