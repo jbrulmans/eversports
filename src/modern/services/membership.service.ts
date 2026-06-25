@@ -1,0 +1,113 @@
+import { addMonths, addWeeks } from 'date-fns';
+
+import type { IMembershipRepository } from '../repositories';
+import type {
+  BillingInterval,
+  MembershipPeriod,
+  MembershipPeriodState,
+  MembershipState,
+  MembershipWithPeriods,
+  ValidatedMembershipInput,
+} from '../types';
+
+const DEFAULT_USER_ID = 2000;
+
+export class MembershipService {
+  constructor(
+    private readonly repo: IMembershipRepository,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
+
+  listMemberships(): MembershipWithPeriods[] {
+    return this.repo.findAllWithPeriods();
+  }
+
+  createMembership(input: ValidatedMembershipInput): MembershipWithPeriods {
+    if (input.billingPeriods < 1) {
+      throw new Error('billingPeriods must be at least 1');
+    }
+
+    const periodData = this.generatePeriods(
+      input.validFrom,
+      input.billingInterval,
+      input.billingPeriods,
+    );
+    const validUntil = periodData[periodData.length - 1].end;
+    const state = this.determineState(input.validFrom, validUntil);
+
+    return this.repo.saveMembershipWithPeriods({
+      membership: {
+        name: input.name,
+        user: DEFAULT_USER_ID,
+        recurringPrice: input.recurringPrice,
+        validFrom: input.validFrom,
+        validUntil,
+        state,
+        paymentMethod: input.paymentMethod,
+        billingInterval: input.billingInterval,
+        billingPeriods: input.billingPeriods,
+      },
+      periods: periodData,
+    });
+  }
+
+  private assertNever(value: never): never {
+    throw new Error(`Unhandled interval: ${String(value)}`);
+  }
+
+  private advance(date: Date, interval: BillingInterval, count: number): Date {
+    switch (interval) {
+      case 'monthly':
+        return addMonths(date, count);
+      case 'yearly':
+        return addMonths(date, count * 12);
+      case 'weekly':
+        return addWeeks(date, count);
+      default:
+        return this.assertNever(interval);
+    }
+  }
+
+  private determineState(validFrom: Date, validUntil: Date): MembershipState {
+    const now = this.now();
+
+    if (validFrom > now) {
+      return 'pending';
+    }
+
+    if (validUntil < now) {
+      return 'expired';
+    }
+
+    return 'active';
+  }
+
+  private determinePeriodState(start: Date, end: Date, now: Date): MembershipPeriodState {
+    if (now < start) return 'planned';
+    if (now >= end) return 'issued';
+    return 'active';
+  }
+
+  private generatePeriods(
+    validFrom: Date,
+    interval: BillingInterval,
+    periods: number,
+  ): Omit<MembershipPeriod, 'id' | 'uuid' | 'membership'>[] {
+    const result: Omit<MembershipPeriod, 'id' | 'uuid' | 'membership'>[] = [];
+    let periodStart = validFrom;
+    const now = this.now();
+
+    for (let i = 0; i < periods; i++) {
+      const start = periodStart;
+      const end = this.advance(start, interval, 1);
+      result.push({
+        start,
+        end,
+        state: this.determinePeriodState(start, end, now),
+      });
+      periodStart = end;
+    }
+
+    return result;
+  }
+}
