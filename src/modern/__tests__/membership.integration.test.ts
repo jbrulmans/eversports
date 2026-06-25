@@ -24,6 +24,23 @@ describe('GET /memberships', () => {
       expect(Array.isArray(row.membershipPeriods)).toBe(true);
     });
   });
+
+  it('normalizes field names: user (not userId), no assignedBy', async () => {
+    const app = createApp();
+    const response = await request(app).get('/memberships');
+
+    expect(response.body[0].membership).toHaveProperty('user', 2000);
+    expect(response.body[0].membership).not.toHaveProperty('userId');
+    expect(response.body[0].membership).not.toHaveProperty('assignedBy');
+  });
+
+  it('returns populated periods for each membership (not empty arrays)', async () => {
+    const app = createApp();
+    const response = await request(app).get('/memberships');
+
+    expect(response.body[0].membershipPeriods.length).toBeGreaterThan(0);
+    expect(response.body[0].membershipPeriods[0]).toHaveProperty('membership', 1);
+  });
 });
 
 describe('POST /memberships', () => {
@@ -179,6 +196,99 @@ describe('POST /memberships', () => {
     expect(response.status).toBe(201);
     expect(response.body.membershipPeriods).toHaveLength(4);
   });
+
+  it('accepts recurringPrice = 0 (free membership)', async () => {
+    const app = createApp();
+    const response = await request(app)
+      .post('/memberships')
+      .send(buildCreateMembershipRequestBody({ recurringPrice: 0, paymentMethod: undefined }));
+
+    expect(response.status).toBe(201);
+    expect(response.body.membership.recurringPrice).toBe(0);
+  });
+
+  it('normalizes undefined paymentMethod to null in response', async () => {
+    const app = createApp();
+    const response = await request(app)
+      .post('/memberships')
+      .send(buildCreateMembershipRequestBody({ paymentMethod: undefined }));
+
+    expect(response.status).toBe(201);
+    expect(response.body.membership.paymentMethod).toBeNull();
+  });
+
+  it('defaults validFrom to now when not provided', async () => {
+    const app = createApp();
+    const before = new Date();
+    const response = await request(app)
+      .post('/memberships')
+      .send(buildCreateMembershipRequestBody({ validFrom: undefined }));
+    const after = new Date();
+
+    expect(response.status).toBe(201);
+    const validFrom = new Date(response.body.membership.validFrom);
+    expect(validFrom.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(validFrom.getTime()).toBeLessThanOrEqual(after.getTime());
+  });
+
+  it('sets membership state to pending when validFrom is in the future', async () => {
+    const app = createApp();
+    const response = await request(app)
+      .post('/memberships')
+      .send(buildCreateMembershipRequestBody({ validFrom: '2099-01-01' }));
+
+    expect(response.body.membership.state).toBe('pending');
+  });
+
+  it('sets membership state to expired when validUntil is in the past', async () => {
+    const app = createApp();
+    const response = await request(app)
+      .post('/memberships')
+      .send(buildCreateMembershipRequestBody({ validFrom: '2020-01-01', billingPeriods: 6 }));
+
+    expect(response.body.membership.state).toBe('expired');
+  });
+
+  it('sets mixed period states (planned, active, issued) when membership spans now', async () => {
+    const app = createApp();
+    const response = await request(app)
+      .post('/memberships')
+      .send(buildCreateMembershipRequestBody({ validFrom: '2026-01-01', billingPeriods: 12 }));
+
+    const states = response.body.membershipPeriods.map((p: { state: string }) => p.state);
+    expect(states).toContain('planned');
+    expect(states).toContain('issued');
+  });
+
+  it('returns 400 with billingPeriodsMoreThan10Years for yearly > 10', async () => {
+    const app = createApp();
+    const response = await request(app)
+      .post('/memberships')
+      .send(buildCreateMembershipRequestBody({ billingInterval: 'yearly', billingPeriods: 11 }));
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ message: 'billingPeriodsMoreThan10Years' });
+  });
+
+  it('returns 400 with billingPeriodsLessThan3Years for yearly < 3', async () => {
+    const app = createApp();
+    const response = await request(app)
+      .post('/memberships')
+      .send(buildCreateMembershipRequestBody({ billingInterval: 'yearly', billingPeriods: 2 }));
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ message: 'billingPeriodsLessThan3Years' });
+  });
+
+  it('returns 400 with invalidFieldType for string recurringPrice', async () => {
+    const app = createApp();
+    const response = await request(app)
+      .post('/memberships')
+      .send(buildCreateMembershipRequestBody({ recurringPrice: '50' as unknown as number }));
+
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ message: 'invalidFieldType' });
+  });
 });
 
 describe('404 handling', () => {
@@ -188,5 +298,16 @@ describe('404 handling', () => {
 
     expect(response.status).toBe(404);
     expect(response.body).toEqual({ message: 'notFound' });
+  });
+});
+
+describe('persistence', () => {
+  it('created membership appears in subsequent GET request', async () => {
+    const app = createApp();
+    await request(app).post('/memberships').send(buildCreateMembershipRequestBody());
+
+    const getResponse = await request(app).get('/memberships');
+    expect(getResponse.body).toHaveLength(4);
+    expect(getResponse.body[3].membership.name).toBe('Test Plan');
   });
 });
