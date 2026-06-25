@@ -7,9 +7,11 @@ This document records every bug, inconsistency, and gap found in the legacy impl
 ### 1. `req.billingPeriods` typo — dead validation branch
 
 **Legacy (line 29):**
+
 ```js
-if (req.billingPeriods < 6) {   // ← missing .body
-  return res.status(400).json({ message: "billingPeriodsLessThan6Months" });
+if (req.billingPeriods < 6) {
+  // ← missing .body
+  return res.status(400).json({ message: 'billingPeriodsLessThan6Months' });
 }
 ```
 
@@ -32,13 +34,14 @@ if (req.billingPeriods < 6) {   // ← missing .body
 ### 3. Misleading error code: `cashPriceBelow100`
 
 **Legacy (line 22):**
+
 ```js
 if (req.body.recurringPrice > 100 && req.body.paymentMethod === 'cash') {
-  return res.status(400).json({ message: "cashPriceBelow100" });
+  return res.status(400).json({ message: 'cashPriceBelow100' });
 }
 ```
 
-**Problem:** The condition fires when price is *above* 100, but the code says "below." The condition is correct (reject cash payments over 100); the message name is wrong.
+**Problem:** The condition fires when price is _above_ 100, but the code says "below." The condition is correct (reject cash payments over 100); the message name is wrong.
 
 **Fix:** Code changed to `cashPriceAbove100`. The error class (`CashPriceExceedsLimitError`) already described the actual condition.
 
@@ -47,12 +50,13 @@ if (req.body.recurringPrice > 100 && req.body.paymentMethod === 'cash') {
 ### 4. Inverted yearly comparison: `billingPeriodsLessThan3Years`
 
 **Legacy (lines 33-38):**
+
 ```js
 if (req.body.billingPeriods > 3) {
   if (req.body.billingPeriods > 10) {
-    return res.status(400).json({ message: "billingPeriodsMoreThan10Years" });
+    return res.status(400).json({ message: 'billingPeriodsMoreThan10Years' });
   } else {
-    return res.status(400).json({ message: "billingPeriodsLessThan3Years" });
+    return res.status(400).json({ message: 'billingPeriodsLessThan3Years' });
   }
 }
 ```
@@ -90,6 +94,7 @@ if (req.body.billingPeriods > 3) {
 ### 8. `setMonth` overflow
 
 **Legacy:**
+
 ```js
 validUntil.setMonth(validFrom.getMonth() + req.body.billingPeriods);
 ```
@@ -126,32 +131,32 @@ validUntil.setMonth(validFrom.getMonth() + req.body.billingPeriods);
 
 ## Error Code Changes
 
-| Legacy code | Modern code | Reason |
-|-------------|-------------|--------|
-| `cashPriceBelow100` | `cashPriceAbove100` | Misleading name — fires when price is *above* 100, not below |
+| Legacy code         | Modern code         | Reason                                                       |
+| ------------------- | ------------------- | ------------------------------------------------------------ |
+| `cashPriceBelow100` | `cashPriceAbove100` | Misleading name — fires when price is _above_ 100, not below |
 
 ## New Error Codes Added
 
 These validation rules didn't exist in the legacy. The error codes are new, added using the same response format `{ message: "<code>" }`:
 
-| Code | Condition | Why added |
-|------|-----------|-----------|
-| `invalidPaymentMethod` | `paymentMethod` is not `'cash'` or `'credit card'` | Legacy never validated payment method values — any string passed through. Added enum validation to close the gap. |
-| `invalidDateFormat` | `validFrom` is not a parseable date string | Legacy accepted `'banana'` as a date (became `Invalid Date`). Added date coercion with Zod to reject garbage at validation time. |
-| `invalidFieldType` | A field is present but the wrong type (e.g. `recurringPrice: "50"` instead of `50`) | Legacy had no type checking — truthy strings passed all numeric checks. Added type narrowing to distinguish "missing" from "wrong type." |
+| Code                   | Condition                                                                           | Why added                                                                                                                                |
+| ---------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `invalidPaymentMethod` | `paymentMethod` is not `'cash'` or `'credit card'`                                  | Legacy never validated payment method values — any string passed through. Added enum validation to close the gap.                        |
+| `invalidDateFormat`    | `validFrom` is not a parseable date string                                          | Legacy accepted `'banana'` as a date (became `Invalid Date`). Added date coercion with Zod to reject garbage at validation time.         |
+| `invalidFieldType`     | A field is present but the wrong type (e.g. `recurringPrice: "50"` instead of `50`) | Legacy had no type checking — truthy strings passed all numeric checks. Added type narrowing to distinguish "missing" from "wrong type." |
 
 ## New Validation Rules Added
 
-| Rule | Legacy behavior | Modern behavior |
-|------|----------------|-----------------|
-| `billingInterval` required | Not checked — `undefined` passed through | `missingMandatoryFields` |
-| `billingPeriods` required | Not checked — `undefined` produced 0 periods | `missingMandatoryFields` |
-| `billingPeriods` must be integer | Not checked — `2.5` accepted | `invalidBillingPeriods` |
-| `billingPeriods` must be positive | Not checked — `0` and `-1` accepted | `invalidBillingPeriods` |
-| `name` must be non-empty | `!name` caught empty string but `=== undefined` doesn't | `z.string().min(1)` catches empty |
-| `recurringPrice: 0` accepted | `!0` was truthy, treated as missing | Explicit `=== undefined` check — `0` is a valid free membership |
-| `paymentMethod` validated | Any string accepted | Must be `'cash'` or `'credit card'` or `null`/`undefined` |
-| `validFrom` date validated | `new Date('banana')` → `Invalid Date` silently | Zod `z.coerce.date()` rejects unparseable strings |
+| Rule                              | Legacy behavior                                         | Modern behavior                                                 |
+| --------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------- |
+| `billingInterval` required        | Not checked — `undefined` passed through                | `missingMandatoryFields`                                        |
+| `billingPeriods` required         | Not checked — `undefined` produced 0 periods            | `missingMandatoryFields`                                        |
+| `billingPeriods` must be integer  | Not checked — `2.5` accepted                            | `invalidBillingPeriods`                                         |
+| `billingPeriods` must be positive | Not checked — `0` and `-1` accepted                     | `invalidBillingPeriods`                                         |
+| `name` must be non-empty          | `!name` caught empty string but `=== undefined` doesn't | `z.string().min(1)` catches empty                               |
+| `recurringPrice: 0` accepted      | `!0` was truthy, treated as missing                     | Explicit `=== undefined` check — `0` is a valid free membership |
+| `paymentMethod` validated         | Any string accepted                                     | Must be `'cash'` or `'credit card'` or `null`/`undefined`       |
+| `validFrom` date validated        | `new Date('banana')` → `Invalid Date` silently          | Zod `z.coerce.date()` rejects unparseable strings               |
 
 ## Response Shape
 
