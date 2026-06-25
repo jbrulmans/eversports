@@ -7,7 +7,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "strict": true,
-    "allowJs": true  // Allows TypeScript to process JavaScript files
+    "allowJs": true // Allows TypeScript to process JavaScript files
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
