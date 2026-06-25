@@ -1,91 +1,99 @@
-import {
-  BillingPeriodsBelowMonthlyMinimumError,
-  BillingPeriodsBelowYearlyMinimumError,
-  BillingPeriodsExceedMonthlyLimitError,
-  BillingPeriodsExceedYearlyLimitError,
-  CashPriceExceedsLimitError,
-  InvalidBillingIntervalError,
-  InvalidBillingPeriodsError,
-  MissingMandatoryFieldsError,
-  NegativeRecurringPriceError,
-} from '../errors';
+import { z } from 'zod';
+
+import { ValidationError } from '../errors';
 import type {
   BillingInterval,
-  BillingPeriodBounds,
   CreateMembershipRequestBody,
-  PaymentMethod,
   ValidatedMembershipInput,
 } from '../types';
 
 const CASH_PRICE_LIMIT = 100;
 
-const BILLING_PERIOD_BOUNDS: Record<BillingInterval, BillingPeriodBounds | null> = {
+const BILLING_PERIOD_BOUNDS: Record<
+  BillingInterval,
+  { min: number; max: number; minCode: string; maxCode: string } | null
+> = {
   monthly: {
     min: 6,
     max: 12,
-    minError: BillingPeriodsBelowMonthlyMinimumError,
-    maxError: BillingPeriodsExceedMonthlyLimitError,
+    minCode: 'billingPeriodsLessThan6Months',
+    maxCode: 'billingPeriodsMoreThan12Months',
   },
   yearly: {
     min: 3,
     max: 10,
-    minError: BillingPeriodsBelowYearlyMinimumError,
-    maxError: BillingPeriodsExceedYearlyLimitError,
+    minCode: 'billingPeriodsLessThan3Years',
+    maxCode: 'billingPeriodsMoreThan10Years',
   },
   weekly: null,
 };
 
-function isBillingInterval(value: string): value is BillingInterval {
-  return value in BILLING_PERIOD_BOUNDS;
+function validateBillingPeriodBounds(
+  data: { billingInterval: BillingInterval; billingPeriods: number },
+  ctx: z.RefinementCtx,
+) {
+  const bounds = BILLING_PERIOD_BOUNDS[data.billingInterval];
+  if (bounds) {
+    if (data.billingPeriods > bounds.max) {
+      ctx.addIssue({ code: 'custom', message: bounds.maxCode });
+    }
+    if (data.billingPeriods < bounds.min) {
+      ctx.addIssue({ code: 'custom', message: bounds.minCode });
+    }
+  }
 }
+
+const membershipSchema = z
+  .object({
+    name: z
+      .string({ message: 'missingMandatoryFields' })
+      .min(1, { message: 'missingMandatoryFields' }),
+    recurringPrice: z
+      .number({ message: 'missingMandatoryFields' })
+      .min(0, { message: 'negativeRecurringPrice' }),
+    paymentMethod: z
+      .enum(['cash', 'credit card'], {
+        error: () => ({ message: 'invalidPaymentMethod' }),
+      })
+      .nullable()
+      .optional(),
+    billingInterval: z.enum(['monthly', 'yearly', 'weekly'], {
+      error: (issue) => {
+        if (issue.input === undefined) {
+          return { message: 'missingMandatoryFields' };
+        }
+        return { message: 'invalidBillingPeriods' };
+      },
+    }),
+    billingPeriods: z
+      .number({ message: 'missingMandatoryFields' })
+      .int({ message: 'invalidBillingPeriods' })
+      .min(1, { message: 'invalidBillingPeriods' }),
+    validFrom: z.coerce.date({ message: 'invalidDateFormat' }).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.recurringPrice > CASH_PRICE_LIMIT && data.paymentMethod === 'cash') {
+      ctx.addIssue({ code: 'custom', message: 'cashPriceAbove100' });
+    }
+    validateBillingPeriodBounds(data, ctx);
+  });
 
 export function validateCreateMembership(
   body: CreateMembershipRequestBody,
 ): ValidatedMembershipInput {
-  if (
-    body.name === undefined ||
-    body.recurringPrice === undefined ||
-    body.billingInterval === undefined ||
-    body.billingPeriods === undefined
-  ) {
-    throw new MissingMandatoryFieldsError();
+  const result = membershipSchema.safeParse(body);
+  if (!result.success) {
+    throw new ValidationError(result.error.issues[0].message);
   }
 
-  if (body.recurringPrice < 0) {
-    throw new NegativeRecurringPriceError();
-  }
-
-  if (body.recurringPrice > CASH_PRICE_LIMIT && body.paymentMethod === 'cash') {
-    throw new CashPriceExceedsLimitError();
-  }
-
-  if (body.billingPeriods < 1) {
-    throw new InvalidBillingPeriodsError();
-  }
-
-  if (!isBillingInterval(body.billingInterval)) {
-    throw new InvalidBillingIntervalError();
-  }
-
-  const bounds = BILLING_PERIOD_BOUNDS[body.billingInterval];
-  if (bounds !== null) {
-    if (body.billingPeriods > bounds.max) {
-      throw new bounds.maxError();
-    }
-    if (body.billingPeriods < bounds.min) {
-      throw new bounds.minError();
-    }
-  }
-
-  const validFrom = body.validFrom ? new Date(body.validFrom) : new Date();
-  const paymentMethod = (body.paymentMethod ?? null) as PaymentMethod | null;
+  const data = result.data;
 
   return {
-    name: body.name,
-    recurringPrice: body.recurringPrice,
-    paymentMethod,
-    billingInterval: body.billingInterval,
-    billingPeriods: body.billingPeriods,
-    validFrom,
+    name: data.name,
+    recurringPrice: data.recurringPrice,
+    paymentMethod: data.paymentMethod ?? null,
+    billingInterval: data.billingInterval,
+    billingPeriods: data.billingPeriods,
+    validFrom: data.validFrom ?? new Date(),
   };
 }
