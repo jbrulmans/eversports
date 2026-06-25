@@ -76,7 +76,7 @@ Your task is to **map out a diagram** that visualizes the asynchronous process f
 Because the team has other things to work on too, this task is timeboxed to **1 hour** and you should share the architecture diagram as a **PDF file**.
 
 > [!NOTE]
-> Feel free to use any tool out there to create your diagram. If you are not familiar with such a tool, you can use www.draw.io.
+> Feel free to use any tool out there to create your diagram. If you are not familiar with such a tool, you can use [www.draw.io](https://draw.io).
 
 ## Repository Intro
 
@@ -112,9 +112,9 @@ We believe that great developers are not bound to a specific technology set, but
 
 ### Pre-installed
 
-- Express - https://expressjs.com/
-- TypeScript - https://www.typescriptlang.org/
-- Jest - https://jestjs.io/
+- Express - [https://expressjs.com/](https://expressjs.com/)
+- TypeScript - [https://www.typescriptlang.org/](https://www.typescriptlang.org/)
+- Jest - [https://jestjs.io/](https://jestjs.io/)
 
 ## 🤖 Use of AI Tools
 

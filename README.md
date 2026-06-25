@@ -23,11 +23,11 @@ Server runs on `http://localhost:3099`.
 
 ## API Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/memberships` | List all memberships with their billing periods |
-| `POST` | `/memberships` | Create a new membership |
-| `GET` | `/legacy/memberships` | Legacy list endpoint (reference implementation) |
+| Method | Path                  | Description                                       |
+| ------ | --------------------- | ------------------------------------------------- |
+| `GET`  | `/memberships`        | List all memberships with their billing periods   |
+| `POST` | `/memberships`        | Create a new membership                           |
+| `GET`  | `/legacy/memberships` | Legacy list endpoint (reference implementation)   |
 | `POST` | `/legacy/memberships` | Legacy create endpoint (reference implementation) |
 
 ### POST /memberships — Request Body
@@ -44,6 +44,7 @@ Server runs on `http://localhost:3099`.
 ```
 
 **Fields:**
+
 - `name` — required, non-empty string
 - `recurringPrice` — required, non-negative number
 - `paymentMethod` — optional, `"cash"` or `"credit card"` (or `null`)
@@ -52,6 +53,7 @@ Server runs on `http://localhost:3099`.
 - `validFrom` — optional, parseable date string (defaults to now)
 
 **Validation rules:**
+
 - `billingInterval: "monthly"` → `billingPeriods` must be 6-12
 - `billingInterval: "yearly"` → `billingPeriods` must be 3-10
 - `billingInterval: "weekly"` → no bounds (any positive integer)
@@ -61,31 +63,31 @@ Server runs on `http://localhost:3099`.
 
 All errors return `{ "message": "<code>" }` with HTTP 400:
 
-| Code | Condition |
-|------|-----------|
-| `missingMandatoryFields` | Required field missing |
-| `negativeRecurringPrice` | Price is negative |
-| `cashPriceAbove100` | Cash payment with price above 100 |
-| `billingPeriodsMoreThan12Months` | Monthly periods exceed 12 |
-| `billingPeriodsLessThan6Months` | Monthly periods below 6 |
-| `billingPeriodsMoreThan10Years` | Yearly periods exceed 10 |
-| `billingPeriodsLessThan3Years` | Yearly periods below 3 |
-| `invalidBillingPeriods` | Unknown interval or invalid period count |
-| `invalidPaymentMethod` | Invalid payment method value |
-| `invalidDateFormat` | Unparseable date string |
-| `invalidFieldType` | Field present but wrong type |
+| Code                             | Condition                                |
+| -------------------------------- | ---------------------------------------- |
+| `missingMandatoryFields`         | Required field missing                   |
+| `negativeRecurringPrice`         | Price is negative                        |
+| `cashPriceAbove100`              | Cash payment with price above 100        |
+| `billingPeriodsMoreThan12Months` | Monthly periods exceed 12                |
+| `billingPeriodsLessThan6Months`  | Monthly periods below 6                  |
+| `billingPeriodsMoreThan10Years`  | Yearly periods exceed 10                 |
+| `billingPeriodsLessThan3Years`   | Yearly periods below 3                   |
+| `invalidBillingPeriods`          | Unknown interval or invalid period count |
+| `invalidPaymentMethod`           | Invalid payment method value             |
+| `invalidDateFormat`              | Unparseable date string                  |
+| `invalidFieldType`               | Field present but wrong type             |
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run start` | Start the development server |
-| `npm run build` | Compile TypeScript to JavaScript |
-| `npm run serve` | Run compiled JavaScript |
-| `npm run test` | Run all tests (unit + integration) |
-| `npm run typecheck` | Type-check without emitting |
-| `npm run lint` | Run ESLint |
-| `npm run format` | Format code with Prettier |
+| Script              | Description                        |
+| ------------------- | ---------------------------------- |
+| `npm run start`     | Start the development server       |
+| `npm run build`     | Compile TypeScript to JavaScript   |
+| `npm run serve`     | Run compiled JavaScript            |
+| `npm run test`      | Run all tests (unit + integration) |
+| `npm run typecheck` | Type-check without emitting        |
+| `npm run lint`      | Run ESLint                         |
+| `npm run format`    | Format code with Prettier          |
 
 ## Project Structure
 

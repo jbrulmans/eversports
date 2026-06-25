@@ -54,12 +54,12 @@ src/
 
 Each layer handles one concern:
 
-| Layer | Responsibility | Depends on |
-|-------|---------------|------------|
-| **Routes** | HTTP parsing, response formatting | Service, Validator |
-| **Validator** | Input parsing, type narrowing, business rules | None (pure function) |
-| **Service** | Business logic, period generation, state | Repository |
-| **Repository** | Data access, persistence | None |
+| Layer          | Responsibility                                | Depends on           |
+| -------------- | --------------------------------------------- | -------------------- |
+| **Routes**     | HTTP parsing, response formatting             | Service, Validator   |
+| **Validator**  | Input parsing, type narrowing, business rules | None (pure function) |
+| **Service**    | Business logic, period generation, state      | Repository           |
+| **Repository** | Data access, persistence                      | None                 |
 
 The service never touches `req`/`res`. The routes never contain business logic. The validator is stateless — it parses and throws, nothing else.
 
@@ -155,10 +155,20 @@ const membershipSchema = z.object({
 ### 7. Billing Period Bounds — Config Map
 
 ```ts
-const BILLING_PERIOD_BOUNDS: Record<BillingInterval, { min, max, minCode, maxCode } | null> = {
-  monthly: { min: 6, max: 12, minCode: 'billingPeriodsLessThan6Months', maxCode: 'billingPeriodsMoreThan12Months' },
-  yearly:  { min: 3, max: 10, minCode: 'billingPeriodsLessThan3Years', maxCode: 'billingPeriodsMoreThan10Years' },
-  weekly:  null,
+const BILLING_PERIOD_BOUNDS: Record<BillingInterval, { min; max; minCode; maxCode } | null> = {
+  monthly: {
+    min: 6,
+    max: 12,
+    minCode: 'billingPeriodsLessThan6Months',
+    maxCode: 'billingPeriodsMoreThan12Months',
+  },
+  yearly: {
+    min: 3,
+    max: 10,
+    minCode: 'billingPeriodsLessThan3Years',
+    maxCode: 'billingPeriodsMoreThan10Years',
+  },
+  weekly: null,
 };
 ```
 
@@ -247,10 +257,10 @@ export const buildCreateMembershipRequestBody = (
 
 ## Testing Strategy
 
-| Type | Tool | Scope | Location |
-|------|------|-------|----------|
-| **Unit tests** | Jest | Service, Validator, Repository — pure logic, fast | Co-located (`*.test.ts`) |
-| **Integration tests** | Supertest | Full HTTP pipeline — middleware, routes, validation, service, repository | `src/modern/__tests__/` |
+| Type                  | Tool      | Scope                                                                    | Location                 |
+| --------------------- | --------- | ------------------------------------------------------------------------ | ------------------------ |
+| **Unit tests**        | Jest      | Service, Validator, Repository — pure logic, fast                        | Co-located (`*.test.ts`) |
+| **Integration tests** | Supertest | Full HTTP pipeline — middleware, routes, validation, service, repository | `src/modern/__tests__/`  |
 
 - Each test creates a fresh app via `createApp()` — no shared state, no test pollution.
 - Fixture builders provide test data with override support.
