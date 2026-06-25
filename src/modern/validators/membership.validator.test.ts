@@ -1,29 +1,26 @@
 import { buildCreateMembershipRequestBody } from '../__fixtures__/membership.fixture';
-import {
-  BillingPeriodsBelowMonthlyMinimumError,
-  BillingPeriodsBelowYearlyMinimumError,
-  BillingPeriodsExceedMonthlyLimitError,
-  BillingPeriodsExceedYearlyLimitError,
-  CashPriceExceedsLimitError,
-  InvalidBillingIntervalError,
-  InvalidBillingPeriodsError,
-  MissingMandatoryFieldsError,
-  NegativeRecurringPriceError,
-} from '../errors';
+import { ValidationError } from '../errors';
+import type { CreateMembershipRequestBody } from '../types';
 import { validateCreateMembership } from './membership.validator';
+
+function expectValidationError(body: Partial<CreateMembershipRequestBody>, code: string) {
+  expect(() => validateCreateMembership(buildCreateMembershipRequestBody(body))).toThrow(
+    new ValidationError(code),
+  );
+}
 
 describe('validateCreateMembership', () => {
   describe('mandatory fields', () => {
-    it('throws MissingMandatoryFieldsError when name is missing', () => {
-      expect(() =>
-        validateCreateMembership(buildCreateMembershipRequestBody({ name: undefined })),
-      ).toThrow(MissingMandatoryFieldsError);
+    it('throws missingMandatoryFields when name is missing', () => {
+      expectValidationError({ name: undefined }, 'missingMandatoryFields');
     });
 
-    it('throws MissingMandatoryFieldsError when recurringPrice is missing', () => {
-      expect(() =>
-        validateCreateMembership(buildCreateMembershipRequestBody({ recurringPrice: undefined })),
-      ).toThrow(MissingMandatoryFieldsError);
+    it('throws missingMandatoryFields when name is empty', () => {
+      expectValidationError({ name: '' }, 'missingMandatoryFields');
+    });
+
+    it('throws missingMandatoryFields when recurringPrice is missing', () => {
+      expectValidationError({ recurringPrice: undefined }, 'missingMandatoryFields');
     });
 
     it('accepts recurringPrice = 0 (free membership)', () => {
@@ -32,34 +29,51 @@ describe('validateCreateMembership', () => {
       ).not.toThrow();
     });
 
-    it('throws MissingMandatoryFieldsError when billingInterval is missing', () => {
-      expect(() =>
-        validateCreateMembership(buildCreateMembershipRequestBody({ billingInterval: undefined })),
-      ).toThrow(MissingMandatoryFieldsError);
+    it('throws missingMandatoryFields when billingInterval is missing', () => {
+      expectValidationError({ billingInterval: undefined }, 'missingMandatoryFields');
     });
 
-    it('throws MissingMandatoryFieldsError when billingPeriods is missing', () => {
-      expect(() =>
-        validateCreateMembership(buildCreateMembershipRequestBody({ billingPeriods: undefined })),
-      ).toThrow(MissingMandatoryFieldsError);
+    it('throws missingMandatoryFields when billingPeriods is missing', () => {
+      expectValidationError({ billingPeriods: undefined }, 'missingMandatoryFields');
     });
   });
 
   describe('recurringPrice', () => {
-    it('throws NegativeRecurringPriceError for negative price', () => {
-      expect(() =>
-        validateCreateMembership(buildCreateMembershipRequestBody({ recurringPrice: -10 })),
-      ).toThrow(NegativeRecurringPriceError);
+    it('throws negativeRecurringPrice for negative price', () => {
+      expectValidationError({ recurringPrice: -10 }, 'negativeRecurringPrice');
+    });
+  });
+
+  describe('paymentMethod', () => {
+    it('throws invalidPaymentMethod for invalid payment method', () => {
+      expectValidationError({ paymentMethod: 'btc' }, 'invalidPaymentMethod');
+    });
+
+    it('accepts cash', () => {
+      const result = validateCreateMembership(
+        buildCreateMembershipRequestBody({ paymentMethod: 'cash' }),
+      );
+      expect(result.paymentMethod).toBe('cash');
+    });
+
+    it('accepts credit card', () => {
+      const result = validateCreateMembership(
+        buildCreateMembershipRequestBody({ paymentMethod: 'credit card' }),
+      );
+      expect(result.paymentMethod).toBe('credit card');
+    });
+
+    it('normalizes undefined to null', () => {
+      const result = validateCreateMembership(
+        buildCreateMembershipRequestBody({ paymentMethod: undefined }),
+      );
+      expect(result.paymentMethod).toBeNull();
     });
   });
 
   describe('cash price limit', () => {
-    it('throws CashPriceExceedsLimitError when price > 100 and paymentMethod is cash', () => {
-      expect(() =>
-        validateCreateMembership(
-          buildCreateMembershipRequestBody({ recurringPrice: 101, paymentMethod: 'cash' }),
-        ),
-      ).toThrow(CashPriceExceedsLimitError);
+    it('throws cashPriceAbove100 when price > 100 and paymentMethod is cash', () => {
+      expectValidationError({ recurringPrice: 101, paymentMethod: 'cash' }, 'cashPriceAbove100');
     });
 
     it('accepts price = 100 with cash (boundary)', () => {
@@ -80,26 +94,25 @@ describe('validateCreateMembership', () => {
   });
 
   describe('billingPeriods value', () => {
-    it('throws InvalidBillingPeriodsError when billingPeriods is 0', () => {
-      expect(() =>
-        validateCreateMembership(buildCreateMembershipRequestBody({ billingPeriods: 0 })),
-      ).toThrow(InvalidBillingPeriodsError);
+    it('throws invalidBillingPeriods when billingPeriods is 0', () => {
+      expectValidationError({ billingPeriods: 0 }, 'invalidBillingPeriods');
     });
 
-    it('throws InvalidBillingPeriodsError when billingPeriods is negative', () => {
-      expect(() =>
-        validateCreateMembership(buildCreateMembershipRequestBody({ billingPeriods: -5 })),
-      ).toThrow(InvalidBillingPeriodsError);
+    it('throws invalidBillingPeriods when billingPeriods is negative', () => {
+      expectValidationError({ billingPeriods: -5 }, 'invalidBillingPeriods');
+    });
+
+    it('throws invalidBillingPeriods when billingPeriods is fractional', () => {
+      expectValidationError({ billingPeriods: 2.5 }, 'invalidBillingPeriods');
     });
   });
 
   describe('monthly interval', () => {
-    it('throws BillingPeriodsExceedMonthlyLimitError when billingPeriods > 12', () => {
-      expect(() =>
-        validateCreateMembership(
-          buildCreateMembershipRequestBody({ billingInterval: 'monthly', billingPeriods: 13 }),
-        ),
-      ).toThrow(BillingPeriodsExceedMonthlyLimitError);
+    it('throws billingPeriodsMoreThan12Months when billingPeriods > 12', () => {
+      expectValidationError(
+        { billingInterval: 'monthly', billingPeriods: 13 },
+        'billingPeriodsMoreThan12Months',
+      );
     });
 
     it('accepts billingPeriods = 12 (boundary)', () => {
@@ -110,12 +123,11 @@ describe('validateCreateMembership', () => {
       ).not.toThrow();
     });
 
-    it('throws BillingPeriodsBelowMonthlyMinimumError when billingPeriods < 6', () => {
-      expect(() =>
-        validateCreateMembership(
-          buildCreateMembershipRequestBody({ billingInterval: 'monthly', billingPeriods: 5 }),
-        ),
-      ).toThrow(BillingPeriodsBelowMonthlyMinimumError);
+    it('throws billingPeriodsLessThan6Months when billingPeriods < 6', () => {
+      expectValidationError(
+        { billingInterval: 'monthly', billingPeriods: 5 },
+        'billingPeriodsLessThan6Months',
+      );
     });
 
     it('accepts billingPeriods = 6 (boundary)', () => {
@@ -128,20 +140,18 @@ describe('validateCreateMembership', () => {
   });
 
   describe('yearly interval', () => {
-    it('throws BillingPeriodsExceedYearlyLimitError when billingPeriods > 10', () => {
-      expect(() =>
-        validateCreateMembership(
-          buildCreateMembershipRequestBody({ billingInterval: 'yearly', billingPeriods: 11 }),
-        ),
-      ).toThrow(BillingPeriodsExceedYearlyLimitError);
+    it('throws billingPeriodsMoreThan10Years when billingPeriods > 10', () => {
+      expectValidationError(
+        { billingInterval: 'yearly', billingPeriods: 11 },
+        'billingPeriodsMoreThan10Years',
+      );
     });
 
-    it('throws BillingPeriodsBelowYearlyMinimumError when billingPeriods < 3', () => {
-      expect(() =>
-        validateCreateMembership(
-          buildCreateMembershipRequestBody({ billingInterval: 'yearly', billingPeriods: 2 }),
-        ),
-      ).toThrow(BillingPeriodsBelowYearlyMinimumError);
+    it('throws billingPeriodsLessThan3Years when billingPeriods < 3', () => {
+      expectValidationError(
+        { billingInterval: 'yearly', billingPeriods: 2 },
+        'billingPeriodsLessThan3Years',
+      );
     });
 
     it('accepts billingPeriods = 3 (boundary)', () => {
@@ -178,20 +188,17 @@ describe('validateCreateMembership', () => {
       ).not.toThrow();
     });
 
-    it('throws InvalidBillingPeriodsError when billingPeriods is 0', () => {
-      expect(() =>
-        validateCreateMembership(
-          buildCreateMembershipRequestBody({ billingInterval: 'weekly', billingPeriods: 0 }),
-        ),
-      ).toThrow(InvalidBillingPeriodsError);
+    it('throws invalidBillingPeriods when billingPeriods is 0', () => {
+      expectValidationError(
+        { billingInterval: 'weekly', billingPeriods: 0 },
+        'invalidBillingPeriods',
+      );
     });
   });
 
   describe('invalid interval', () => {
-    it('throws InvalidBillingIntervalError for unknown interval', () => {
-      expect(() =>
-        validateCreateMembership(buildCreateMembershipRequestBody({ billingInterval: 'daily' })),
-      ).toThrow(InvalidBillingIntervalError);
+    it('throws invalidBillingPeriods for unknown interval', () => {
+      expectValidationError({ billingInterval: 'daily' }, 'invalidBillingPeriods');
     });
   });
 
@@ -212,35 +219,9 @@ describe('validateCreateMembership', () => {
       expect(result.validFrom.getTime()).toBeGreaterThanOrEqual(before.getTime());
       expect(result.validFrom.getTime()).toBeLessThanOrEqual(after.getTime());
     });
-  });
 
-  describe('paymentMethod normalization', () => {
-    it('normalizes undefined to null', () => {
-      const result = validateCreateMembership(
-        buildCreateMembershipRequestBody({ paymentMethod: undefined }),
-      );
-      expect(result.paymentMethod).toBeNull();
-    });
-
-    it('passes through cash', () => {
-      const result = validateCreateMembership(
-        buildCreateMembershipRequestBody({ paymentMethod: 'cash' }),
-      );
-      expect(result.paymentMethod).toBe('cash');
-    });
-
-    it('passes through credit card', () => {
-      const result = validateCreateMembership(
-        buildCreateMembershipRequestBody({ paymentMethod: 'credit card' }),
-      );
-      expect(result.paymentMethod).toBe('credit card');
-    });
-
-    it('passes through unvalidated values (matches legacy behavior)', () => {
-      const result = validateCreateMembership(
-        buildCreateMembershipRequestBody({ paymentMethod: 'btc' }),
-      );
-      expect(result.paymentMethod).toBe('btc');
+    it('throws invalidDateFormat for unparseable date string', () => {
+      expectValidationError({ validFrom: 'banana' }, 'invalidDateFormat');
     });
   });
 
