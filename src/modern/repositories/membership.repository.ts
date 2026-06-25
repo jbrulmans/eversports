@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import membershipPeriodsData from '../../data/membership-periods.json';
 import membershipsData from '../../data/memberships.json';
-import type { Membership, MembershipPeriod } from '../types/index.ts';
-import { IMembershipRepository } from './membership.interface';
+import type { Membership, MembershipPeriod } from '../types';
+import type { IMembershipRepository } from './membership.interface';
 
 export class InMemoryMembershipRepository implements IMembershipRepository {
   private memberships: Membership[] = [];
