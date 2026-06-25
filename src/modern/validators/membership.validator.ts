@@ -3,16 +3,14 @@ import { z } from 'zod';
 import { ValidationError } from '../errors';
 import type {
   BillingInterval,
+  BillingPeriodBounds,
   CreateMembershipRequestBody,
   ValidatedMembershipInput,
 } from '../types';
 
 const CASH_PRICE_LIMIT = 100;
 
-const BILLING_PERIOD_BOUNDS: Record<
-  BillingInterval,
-  { min: number; max: number; minCode: string; maxCode: string } | null
-> = {
+const BILLING_PERIOD_BOUNDS: Record<BillingInterval, BillingPeriodBounds | null> = {
   monthly: {
     min: 6,
     max: 12,
