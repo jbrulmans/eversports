@@ -106,7 +106,7 @@ npm run test
 - You should put your code in GitHub or GitLab/Bitbucket and send us the link to your repository where we can find the source code. That means no ZIP files.
 - Please make sure to include any additional instructions in a readme in case you change something about the compilation or execution of the codebase.
 
-## 💻 Technologies:
+## 💻 Technologies
 
 We believe that great developers are not bound to a specific technology set, but no matter their toolbox they are able to think critically about how to structure and design good code. For this exercise, we provided just a small and simple set of tools to run the a application and tests. Feel free to use any library out there to help you with your implementation.
 
@@ -122,7 +122,7 @@ At Eversports, we actively use AI as a supporting tool in our daily work, and we
 
 Example AI-SUPPORT.md format:
 
-```
+```text
 - Used Claude Code to generate the initial code structure.
 - Asked GitHub Copilot for suggestions on unit test setup.
 - Used ChatGPT to rephrase parts of this README for clarity.
