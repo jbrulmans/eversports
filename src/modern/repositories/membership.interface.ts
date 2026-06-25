@@ -8,7 +8,7 @@ export interface IMembershipRepository {
   findAllWithPeriods(): MembershipWithPeriods[];
   saveMembershipWithPeriods(data: {
     membership: Omit<Membership, 'id' | 'uuid'>;
-    periods: Omit<MembershipPeriod, 'id' | 'uuid'>[];
+    periods: Omit<MembershipPeriod, 'id' | 'uuid' | 'membership'>[];
   }): { membership: Membership; membershipPeriods: MembershipPeriod[] };
   reset(): void;
 }
