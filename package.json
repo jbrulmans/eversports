@@ -7,7 +7,7 @@
     "start": "ts-node src/index.ts",
     "build": "tsc",
     "serve": "node dist/index.js",
-    "test": "jest",
+    "test": "TZ=UTC jest",
     "lint": "eslint .",
     "format": "prettier --write .",
     "prepare": "husky"
