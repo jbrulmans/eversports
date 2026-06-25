@@ -1,10 +1,16 @@
 import { ErrorRequestHandler } from 'express';
 
+import { BaseError } from './modern/errors';
+
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  const message = err instanceof Error ? err.message : 'Unknown error';
+  if (err instanceof BaseError) {
+    res.status(err.status).json({ message: err.code });
+    return;
+  }
+
   console.error(err instanceof Error ? err.stack : err);
   res.status(500).json({
     error: 'Internal Server Error',
-    message,
+    message: err instanceof Error ? err.message : 'Unknown error',
   });
 };
