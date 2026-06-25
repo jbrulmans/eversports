@@ -9,22 +9,15 @@ import {
   MissingMandatoryFieldsError,
   NegativeRecurringPriceError,
 } from '../errors';
-import type { BaseError } from '../errors/base.error';
 import type {
   BillingInterval,
+  BillingPeriodBounds,
   CreateMembershipRequestBody,
   PaymentMethod,
   ValidatedMembershipInput,
 } from '../types';
 
 const CASH_PRICE_LIMIT = 100;
-
-interface BillingPeriodBounds {
-  min: number;
-  max: number;
-  minError: new () => BaseError;
-  maxError: new () => BaseError;
-}
 
 const BILLING_PERIOD_BOUNDS: Record<BillingInterval, BillingPeriodBounds | null> = {
   monthly: {
