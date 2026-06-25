@@ -12,7 +12,7 @@ export interface Membership {
   validFrom: Date;
   validUntil: Date;
   state: MembershipState;
-  paymentMethod: PaymentMethod | null;
+  paymentMethod: PaymentMethod;
   billingInterval: BillingInterval;
   billingPeriods: number;
 }
