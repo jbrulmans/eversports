@@ -19,6 +19,10 @@ describe('validateCreateMembership', () => {
       expectValidationError({ name: '' }, 'missingMandatoryFields');
     });
 
+    it('throws invalidFieldType when name is a number', () => {
+      expectValidationError({ name: 123 as unknown as string }, 'invalidFieldType');
+    });
+
     it('throws missingMandatoryFields when recurringPrice is missing', () => {
       expectValidationError({ recurringPrice: undefined }, 'missingMandatoryFields');
     });
@@ -41,6 +45,10 @@ describe('validateCreateMembership', () => {
   describe('recurringPrice', () => {
     it('throws negativeRecurringPrice for negative price', () => {
       expectValidationError({ recurringPrice: -10 }, 'negativeRecurringPrice');
+    });
+
+    it('throws invalidFieldType for string input', () => {
+      expectValidationError({ recurringPrice: '50' as unknown as number }, 'invalidFieldType');
     });
   });
 
@@ -66,6 +74,13 @@ describe('validateCreateMembership', () => {
     it('normalizes undefined to null', () => {
       const result = validateCreateMembership(
         buildCreateMembershipRequestBody({ paymentMethod: undefined }),
+      );
+      expect(result.paymentMethod).toBeNull();
+    });
+
+    it('normalizes null to null', () => {
+      const result = validateCreateMembership(
+        buildCreateMembershipRequestBody({ paymentMethod: null as unknown as string }),
       );
       expect(result.paymentMethod).toBeNull();
     });
@@ -104,6 +119,10 @@ describe('validateCreateMembership', () => {
 
     it('throws invalidBillingPeriods when billingPeriods is fractional', () => {
       expectValidationError({ billingPeriods: 2.5 }, 'invalidBillingPeriods');
+    });
+
+    it('throws invalidFieldType for string input', () => {
+      expectValidationError({ billingPeriods: '12' as unknown as number }, 'invalidFieldType');
     });
   });
 
@@ -214,6 +233,16 @@ describe('validateCreateMembership', () => {
       const before = new Date();
       const result = validateCreateMembership(
         buildCreateMembershipRequestBody({ validFrom: undefined }),
+      );
+      const after = new Date();
+      expect(result.validFrom.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      expect(result.validFrom.getTime()).toBeLessThanOrEqual(after.getTime());
+    });
+
+    it('defaults to now when validFrom is null', () => {
+      const before = new Date();
+      const result = validateCreateMembership(
+        buildCreateMembershipRequestBody({ validFrom: null as unknown as string }),
       );
       const after = new Date();
       expect(result.validFrom.getTime()).toBeGreaterThanOrEqual(before.getTime());

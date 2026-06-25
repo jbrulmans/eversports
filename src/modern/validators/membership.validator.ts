@@ -43,13 +43,18 @@ function validateBillingPeriodBounds(
   }
 }
 
+function requiredOrTypeError() {
+  return (issue: { input: unknown }) => {
+    if (issue.input === undefined) return { message: 'missingMandatoryFields' };
+    return { message: 'invalidFieldType' };
+  };
+}
+
 const membershipSchema = z
   .object({
-    name: z
-      .string({ message: 'missingMandatoryFields' })
-      .min(1, { message: 'missingMandatoryFields' }),
+    name: z.string({ error: requiredOrTypeError() }).min(1, { message: 'missingMandatoryFields' }),
     recurringPrice: z
-      .number({ message: 'missingMandatoryFields' })
+      .number({ error: requiredOrTypeError() })
       .min(0, { message: 'negativeRecurringPrice' }),
     paymentMethod: z
       .enum(['cash', 'credit card'], {
@@ -66,10 +71,10 @@ const membershipSchema = z
       },
     }),
     billingPeriods: z
-      .number({ message: 'missingMandatoryFields' })
+      .number({ error: requiredOrTypeError() })
       .int({ message: 'invalidBillingPeriods' })
       .min(1, { message: 'invalidBillingPeriods' }),
-    validFrom: z.coerce.date({ message: 'invalidDateFormat' }).optional(),
+    validFrom: z.coerce.date({ message: 'invalidDateFormat' }).nullable().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.recurringPrice > CASH_PRICE_LIMIT && data.paymentMethod === 'cash') {
@@ -82,6 +87,7 @@ export function validateCreateMembership(
   body: CreateMembershipRequestBody,
 ): ValidatedMembershipInput {
   const result = membershipSchema.safeParse(body);
+
   if (!result.success) {
     throw new ValidationError(result.error.issues[0].message);
   }
