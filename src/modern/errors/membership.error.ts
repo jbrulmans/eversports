@@ -12,7 +12,7 @@ export class NegativeRecurringPriceError extends BaseError {
 
 export class CashPriceExceedsLimitError extends BaseError {
   readonly status = 400;
-  readonly code = 'cashPriceBelow100';
+  readonly code = 'cashPriceAbove100';
 }
 
 export class BillingPeriodsExceedMonthlyLimitError extends BaseError {
