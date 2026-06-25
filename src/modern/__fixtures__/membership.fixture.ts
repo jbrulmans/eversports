@@ -1,4 +1,4 @@
-import type { Membership, MembershipPeriod } from '../types';
+import type { CreateMembershipRequestBody, Membership, MembershipPeriod } from '../types';
 
 export const buildMembershipData = (
   overrides?: Partial<Omit<Membership, 'id' | 'uuid'>>,
@@ -22,5 +22,17 @@ export const buildPeriodData = (
   start: new Date('2024-01-01'),
   end: new Date('2024-02-01'),
   state: 'planned',
+  ...overrides,
+});
+
+export const buildCreateMembershipRequestBody = (
+  overrides?: Partial<CreateMembershipRequestBody>,
+): CreateMembershipRequestBody => ({
+  name: 'Test Plan',
+  recurringPrice: 50,
+  paymentMethod: 'cash',
+  billingInterval: 'monthly',
+  billingPeriods: 12,
+  validFrom: '2024-01-01',
   ...overrides,
 });

@@ -39,3 +39,8 @@ export class InvalidBillingIntervalError extends BaseError {
   readonly status = 400;
   readonly code = 'invalidBillingPeriods';
 }
+
+export class InvalidBillingPeriodsError extends BaseError {
+  readonly status = 400;
+  readonly code = 'invalidBillingPeriods';
+}
