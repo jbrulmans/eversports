@@ -1,13 +1,24 @@
 import express, { Request, Response } from 'express';
 
-const router = express.Router();
+import type { MembershipService } from '../services';
+import type { CreateMembershipRequestBody } from '../types';
+import { validateCreateMembership } from '../validators';
 
-router.get('/', (_req: Request, _res: Response) => {
-  throw new Error('not implemented');
-});
+export function createMembershipRouter(service: MembershipService) {
+  const router = express.Router();
 
-router.post('/', (_req: Request, _res: Response) => {
-  throw new Error('not implemented');
-});
+  router.get('/', (_req: Request, res: Response) => {
+    const result = service.listMemberships();
 
-export default router;
+    res.status(200).json(result);
+  });
+
+  router.post('/', (req: Request<unknown, unknown, CreateMembershipRequestBody>, res: Response) => {
+    const validated = validateCreateMembership(req.body);
+    const result = service.createMembership(validated);
+
+    res.status(201).json(result);
+  });
+
+  return router;
+}
