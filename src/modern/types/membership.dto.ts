@@ -12,7 +12,7 @@ export interface CreateMembershipRequestBody {
 export interface ValidatedMembershipInput {
   name: string;
   recurringPrice: number;
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethod | null;
   billingInterval: BillingInterval;
   billingPeriods: number;
   validFrom: Date;
