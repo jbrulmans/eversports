@@ -4,7 +4,6 @@ A modernized implementation of the membership management API, refactored from a 
 
 [![CI](https://github.com/jbrulmans/eversports/actions/workflows/ci.yaml/badge.svg)](https://github.com/jbrulmans/eversports/actions/workflows/ci.yaml)
 ![Node](https://img.shields.io/badge/node-24.15-green)
-![TypeScript](https://img.shields.io/badge/TypeScript-6.0-blue)
 
 ## Prerequisites
 
