@@ -91,7 +91,7 @@ All errors return `{ "message": "<code>" }` with HTTP 400:
 
 ## Project Structure
 
-```
+```text
 src/
   app.ts                                 Express app factory (composition root)
   index.ts                               Server entry point
