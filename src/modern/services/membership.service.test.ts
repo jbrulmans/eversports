@@ -1,4 +1,5 @@
 import { buildCreateMembershipRequestBody } from '../__fixtures__/membership.fixture';
+import { ValidationError } from '../errors';
 import { InMemoryMembershipRepository } from '../repositories';
 import type { ValidatedMembershipInput } from '../types';
 import { validateCreateMembership } from '../validators';
@@ -79,7 +80,7 @@ describe('MembershipService', () => {
       expect(result.membership.validUntil).toEqual(lastPeriodEnd);
     });
 
-    it('throws when billingPeriods is less than 1', () => {
+    it('throws a ValidationError when billingPeriods is less than 1', () => {
       const input: ValidatedMembershipInput = {
         name: 'Test Plan',
         recurringPrice: 50,
@@ -88,7 +89,7 @@ describe('MembershipService', () => {
         billingPeriods: 0,
         validFrom: new Date('2024-01-01'),
       };
-      expect(() => service.createMembership(input)).toThrow('billingPeriods must be at least 1');
+      expect(() => service.createMembership(input)).toThrow(ValidationError);
     });
   });
 

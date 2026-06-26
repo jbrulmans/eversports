@@ -1,5 +1,6 @@
 import { addMonths, addWeeks } from 'date-fns';
 
+import { ValidationError } from '../errors';
 import type { IMembershipRepository } from '../repositories';
 import type {
   BillingInterval,
@@ -24,7 +25,7 @@ export class MembershipService {
 
   createMembership(input: ValidatedMembershipInput): MembershipWithPeriods {
     if (input.billingPeriods < 1) {
-      throw new Error('billingPeriods must be at least 1');
+      throw new ValidationError('invalidBillingPeriods');
     }
 
     const periodData = this.generatePeriods(
