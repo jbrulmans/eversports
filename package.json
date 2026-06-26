@@ -4,9 +4,9 @@
   "description": "technical assessment for the fullstack developer interview",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node src/index.ts",
+    "start": "TZ=UTC ts-node src/index.ts",
     "build": "tsc",
-    "serve": "node dist/index.js",
+    "serve": "TZ=UTC node dist/index.js",
     "test": "TZ=UTC jest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
