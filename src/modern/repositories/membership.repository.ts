@@ -57,7 +57,7 @@ export class InMemoryMembershipRepository implements IMembershipRepository {
 
   saveMembershipWithPeriods(data: {
     membership: Omit<Membership, 'id' | 'uuid'>;
-    periods: Omit<MembershipPeriod, 'id' | 'uuid'>[];
+    periods: Omit<MembershipPeriod, 'id' | 'uuid' | 'membership'>[];
   }): { membership: Membership; membershipPeriods: MembershipPeriod[] } {
     const membership = this.saveMembership(data.membership);
     const membershipPeriods = this.savePeriods(
