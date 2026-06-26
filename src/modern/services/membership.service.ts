@@ -34,7 +34,8 @@ export class MembershipService {
       input.billingPeriods,
     );
     const validUntil = periodData[periodData.length - 1].end;
-    const state = this.determineState(input.validFrom, validUntil);
+    const now = this.now();
+    const state = this.determineState(input.validFrom, validUntil, now);
 
     return this.repo.saveMembershipWithPeriods({
       membership: {
@@ -69,9 +70,7 @@ export class MembershipService {
     }
   }
 
-  private determineState(validFrom: Date, validUntil: Date): MembershipState {
-    const now = this.now();
-
+  private determineState(validFrom: Date, validUntil: Date, now: Date): MembershipState {
     if (validFrom > now) {
       return 'pending';
     }
