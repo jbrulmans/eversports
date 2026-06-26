@@ -11,6 +11,6 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   console.error(err instanceof Error ? err.stack : err);
   res.status(500).json({
     error: 'Internal Server Error',
-    message: err instanceof Error ? err.message : 'Unknown error',
+    message: 'An unexpected error occurred',
   });
 };
