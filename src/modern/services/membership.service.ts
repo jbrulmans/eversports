@@ -13,6 +13,10 @@ import type {
 
 const DEFAULT_USER_ID = 2000;
 
+function assertNever(value: never): never {
+  throw new Error(`Unhandled interval: ${String(value)}`);
+}
+
 export class MembershipService {
   constructor(
     private readonly repo: IMembershipRepository,
@@ -54,10 +58,6 @@ export class MembershipService {
     });
   }
 
-  private assertNever(value: never): never {
-    throw new Error(`Unhandled interval: ${String(value)}`);
-  }
-
   private advance(date: Date, interval: BillingInterval, count: number): Date {
     switch (interval) {
       case 'monthly':
@@ -67,7 +67,7 @@ export class MembershipService {
       case 'weekly':
         return addWeeks(date, count);
       default:
-        return this.assertNever(interval);
+        return assertNever(interval);
     }
   }
 
