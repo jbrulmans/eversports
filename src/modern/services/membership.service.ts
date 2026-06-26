@@ -28,13 +28,14 @@ export class MembershipService {
       throw new ValidationError('invalidBillingPeriods');
     }
 
+    const now = this.now();
     const periodData = this.generatePeriods(
       input.validFrom,
       input.billingInterval,
       input.billingPeriods,
+      now,
     );
     const validUntil = periodData[periodData.length - 1].end;
-    const now = this.now();
     const state = this.determineState(input.validFrom, validUntil, now);
 
     return this.repo.saveMembershipWithPeriods({
@@ -92,10 +93,10 @@ export class MembershipService {
     validFrom: Date,
     interval: BillingInterval,
     periods: number,
+    now: Date,
   ): Omit<MembershipPeriod, 'id' | 'uuid' | 'membership'>[] {
     const result: Omit<MembershipPeriod, 'id' | 'uuid' | 'membership'>[] = [];
     let periodStart = validFrom;
-    const now = this.now();
 
     for (let i = 0; i < periods; i++) {
       const start = periodStart;
