@@ -129,6 +129,10 @@ See [docs/legacy-bugs.md](docs/legacy-bugs.md) for the complete inventory of bug
 
 See [docs/assignment.md](docs/assignment.md) for the original assignment brief.
 
+## Task 2
+
+See [docs/task2.pdf](docs/task2.pdf) for the Task 2 requirements and deliverables.
+
 ## AI Support
 
 See [AI-SUPPORT.md](AI-SUPPORT.md) for disclosure of AI tool usage during this project.
