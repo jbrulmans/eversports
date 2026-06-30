@@ -4,7 +4,7 @@
 
 The modernized membership codebase uses a layered architecture where each layer has a single responsibility. Request flow follows a clear path from HTTP entry to data persistence:
 
-```
+```text
 HTTP Request
   → Routes (thin controllers)
     → Validator (Zod schema — input parsing, type narrowing, business rules)
@@ -16,7 +16,7 @@ HTTP Response
 
 ## Directory Structure
 
-```
+```text
 src/
   app.ts                                 Express app factory (composition root)
   index.ts                               Server entry point

@@ -3,3 +3,4 @@ src/modern/routes/membership.routes.test.ts
 __snapshots__/
 node_modules/
 docs/notes/
+.DS_Store
